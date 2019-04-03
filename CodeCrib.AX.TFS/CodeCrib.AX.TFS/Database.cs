@@ -1,4 +1,4 @@
-﻿//This C# code file was released under the Ms-PL license
+//This C# code file was released under the Ms-PL license
 //http://www.opensource.org/licenses/ms-pl.html
 //This script was originally intended for use with Microsoft Dynamics AX
 //and maintained and distributed as a project on CodePlex
@@ -90,7 +90,7 @@ namespace CodeCrib.AX.TFS
         protected override void Execute(CodeActivityContext context)
         {
             string configurationFile = ConfigurationFile.Get(context);
-            var serverConfig = CodeCrib.AX.Deploy.Configs.GetServerConfig(configurationFile);
+            var serverConfig = Helper.GetServerConfig(configurationFile);
             string serverName = serverConfig.DatabaseServer;
             string databaseName = serverConfig.Database;
 
@@ -108,7 +108,7 @@ namespace CodeCrib.AX.TFS
         protected override void Execute(CodeActivityContext context)
         {
             string configurationFile = ConfigurationFile.Get(context);
-            var serverConfig = CodeCrib.AX.Deploy.Configs.GetServerConfig(configurationFile);
+            var serverConfig = Helper.GetServerConfig(configurationFile);
             string serverName = serverConfig.DatabaseServer;
             string databaseName = serverConfig.Database;
 
