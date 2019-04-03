@@ -127,6 +127,8 @@ namespace CodeCrib.AX.TFS
         public InArgument<StringList> LayerCodes { get; set; }
         [RequiredArgument]
         public InArgument<string> ModelManifestFile { get; set; }
+        [RequiredArgument] [System.ComponentModel.DefaultValue(false)]
+        public InArgument<bool> NoCompileOnImport { get; set; }
 
         protected override IAsyncResult BeginExecute(AsyncCodeActivityContext context, AsyncCallback callback, object state)
         {
@@ -139,6 +141,7 @@ namespace CodeCrib.AX.TFS
             string publisher;
             string layer;
             string layerCode;
+            bool noCompileOnImport = NoCompileOnImport.Get(context);            
 
             Helper.ExtractClientLayerModelInfo(configurationFile, layerCodes, modelManifest, out modelName, out publisher, out layer, out layerCode);
 
@@ -151,7 +154,7 @@ namespace CodeCrib.AX.TFS
             Client.AutoRun.AxaptaAutoRun.SerializeAutoRun(autoRun, autoRunFile);
 
             context.TrackBuildMessage(string.Format("Importing XPO {0} into model {1}", xpoFile, modelName));
-            Process process = Client.Client.StartCommand(new Client.Commands.AutoRun() { ConfigurationFile = configurationFile, Layer = layer, LayerCode = layerCode, Model = modelName, ModelPublisher = publisher, Filename = autoRunFile });
+            Process process = Client.Client.StartCommand(new Client.Commands.AutoRun() { ConfigurationFile = configurationFile, Layer = layer, LayerCode = layerCode, Model = modelName, ModelPublisher = publisher, Filename = autoRunFile, NoCompileOnImport = noCompileOnImport });
 
             Func<int, int, Exception> processWaitDelegate = new Func<int, int, Exception>(CommandContext.WaitForProcess);
             context.UserState = new CommandContext { Delegate = processWaitDelegate, Process = process, AutoRun = autoRun, AutoRunFile = autoRunFile, LogFile = autoRun.LogFile };
