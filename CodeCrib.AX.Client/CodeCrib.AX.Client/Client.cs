@@ -120,9 +120,37 @@ namespace CodeCrib.AX.Client
             string parameterString = String.Join(" ", parameterList.ToArray());
 
             ProcessStartInfo processStartInfo = new ProcessStartInfo(ExecutablePath, parameterString);
+            //Add command to event log
+            this.WriteEventLogEntry(String.Format("Execute : {0} {1}", ExecutablePath, parameterString));
             processStartInfo.WindowStyle = ProcessWindowStyle.Minimized;
 
             return Process.Start(processStartInfo);
         }
+        
+        private void WriteEventLogEntry(string message)
+        {
+            // Create an instance of EventLog
+            System.Diagnostics.EventLog eventLog = new System.Diagnostics.EventLog();
+
+            // Check if the event source exists. If not create it.
+            if (!System.Diagnostics.EventLog.SourceExists("CodeCrib"))
+            {
+                System.Diagnostics.EventLog.CreateEventSource("CodeCrib", "Application");
+            }
+
+            // Set the source name for writing log entries.
+            eventLog.Source = "CodeCrib";
+
+            // Create an event ID to add to the event log
+            int eventID = 8;
+
+            // Write an entry to the event log.
+            eventLog.WriteEntry(message,
+                                System.Diagnostics.EventLogEntryType.Information,
+                                eventID);
+
+            // Close the Event Log
+            eventLog.Close();
+        }        
     }
 }
