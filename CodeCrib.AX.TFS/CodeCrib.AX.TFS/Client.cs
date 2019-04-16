@@ -146,19 +146,32 @@ namespace CodeCrib.AX.TFS
             Helper.ExtractClientLayerModelInfo(configurationFile, layerCodes, modelManifest, out modelName, out publisher, out layer, out layerCode);
 
             var clientConfig = Helper.GetClientConfig(configurationFile);
+            if (xpoImportMode)
+            {
+                Client.AutoRun.XpoImport xpoImportRun = new Client.AutoRun.XpoImport() { File = xpoFile };
+                
+                context.TrackBuildMessage(string.Format("FAST import of XPO {0} into model {1}", xpoFile, modelName));
+                Process processXpo = Client.Client.StartCommand(new Client.Commands.ImportXPO() { ConfigurationFile = configurationFile, Layer = layer, LayerCode = layerCode, Model = modelName, ModelPublisher = publisher, Filename = xpoFile ,  XpoImportMode = xpoImportMode });
 
-            Client.AutoRun.AxaptaAutoRun autoRun = new Client.AutoRun.AxaptaAutoRun() { ExitWhenDone = true, LogFile = string.Format(@"{0}\ImportLog-{1}.xml", Environment.ExpandEnvironmentVariables(clientConfig.LogDirectory), Guid.NewGuid()) };
-            autoRun.Steps.Add(new Client.AutoRun.XpoImport() { File = xpoFile });
+                Func<int, int, Exception> processWaitDelegate = new Func<int, int, Exception>(CommandContext.WaitForProcess);
+                context.UserState = new CommandContext { Delegate = processWaitDelegate, Process = processXpo };
+                return processWaitDelegate.BeginInvoke(processXpo.Id, timeoutMinutes, callback, state);
+            }
+            else
+            {
+                Client.AutoRun.AxaptaAutoRun autoRun = new Client.AutoRun.AxaptaAutoRun() { ExitWhenDone = true, LogFile = string.Format(@"{0}\ImportLog-{1}.xml", Environment.ExpandEnvironmentVariables(clientConfig.LogDirectory), Guid.NewGuid()) };
+                autoRun.Steps.Add(new Client.AutoRun.XpoImport() { File = xpoFile });
 
-            string autoRunFile = string.Format(@"{0}\AutoRun-ImportXPO-{1}.xml", Environment.GetEnvironmentVariable("temp"), Guid.NewGuid());
-            Client.AutoRun.AxaptaAutoRun.SerializeAutoRun(autoRun, autoRunFile);
+                string autoRunFile = string.Format(@"{0}\AutoRun-ImportXPO-{1}.xml", Environment.GetEnvironmentVariable("temp"), Guid.NewGuid());
+                Client.AutoRun.AxaptaAutoRun.SerializeAutoRun(autoRun, autoRunFile);
 
-            context.TrackBuildMessage(string.Format("Importing XPO {0} into model {1}", xpoFile, modelName));
-            Process process = Client.Client.StartCommand(new Client.Commands.AutoRun() { ConfigurationFile = configurationFile, Layer = layer, LayerCode = layerCode, Model = modelName, ModelPublisher = publisher, Filename = autoRunFile, NoCompileOnImport = noCompileOnImport });
+                context.TrackBuildMessage(string.Format("Importing XPO {0} into model {1}", xpoFile, modelName));
+                Process process = Client.Client.StartCommand(new Client.Commands.AutoRun() { ConfigurationFile = configurationFile, Layer = layer, LayerCode = layerCode, Model = modelName, ModelPublisher = publisher, Filename = autoRunFile, NoCompileOnImport = noCompileOnImport });
 
-            Func<int, int, Exception> processWaitDelegate = new Func<int, int, Exception>(CommandContext.WaitForProcess);
-            context.UserState = new CommandContext { Delegate = processWaitDelegate, Process = process, AutoRun = autoRun, AutoRunFile = autoRunFile, LogFile = autoRun.LogFile };
-            return processWaitDelegate.BeginInvoke(process.Id, timeoutMinutes, callback, state);
+                Func<int, int, Exception> processWaitDelegate = new Func<int, int, Exception>(CommandContext.WaitForProcess);
+                context.UserState = new CommandContext { Delegate = processWaitDelegate, Process = process, AutoRun = autoRun, AutoRunFile = autoRunFile, LogFile = autoRun.LogFile };
+                return processWaitDelegate.BeginInvoke(process.Id, timeoutMinutes, callback, state);
+            }                
         }
 
         protected override void Cancel(AsyncCodeActivityContext context)
